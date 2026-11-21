@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="DagKalender" />
+  <meta name="theme-color" id="themeColorMeta" content="#000000" />
+  <title>DagKalender</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --card-elevated: #2c2c2e;
+      --text: #f5f5f7;
+      --heading: #ffffff;
+      --subtext: #a1a1a6;
+      --border: #38383a;
+      --accent: #0a84ff;
+      --accent-soft: rgba(10, 132, 255, 0.22);
+      --warn-bg: #2c1e08;
+      --warn-border: #ff9f0a;
+      --warn-text: #ffd699;
+      --warn2-bg: #1c2433;
+      --warn2-border: #64d2ff;
+      --warn2-text: #bceeff;
+      --danger: #ff453a;
+      --modal-backdrop: rgba(0, 0, 0, 0.72);
+      --safe-top: env(safe-area-inset-top, 20px);
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    body.light-mode {
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --card-elevated: #e5e5ea;
+      --text: #1c1c1e;
+      --heading: #000000;
+      --subtext: #5c5c61;
+      --border: #c7c7cc;
+      --accent: #007aff;
+      --accent-soft: rgba(0, 122, 255, 0.15);
+      --warn-bg: #fff4e5;
+      --warn-border: #ff9500;
+      --warn-text: #9a4e00;
+      --warn2-bg: #eef7ff;
+      --warn2-border: #007aff;
+      --warn2-text: #004999;
+      --danger: #ff3b30;
+      --modal-backdrop: rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      font-size: 20px;
+      line-height: 1.45;
+      padding-top: var(--safe-top);
+      padding-bottom: calc(var(--safe-bottom) + 32px);
+      user-select: none;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      gap: 10px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.5px;
+      color: var(--heading);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .today-btn {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: none;
+      padding: 11px 16px;
+      border-radius: 24px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .theme-btn {
+      background: var(--card);
+      color: var(--heading);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 24px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Zoekbalk */
+    .search-box {
+      width: 100%;
+      padding: 15px 18px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      font-size: 20px;
+      margin-bottom: 16px;
+      outline: none;
+      color: var(--text);
+    }
+
+    .search-box::placeholder {
+      color: var(--subtext);
+    }
+
+    /* Waarschuwingsbanners (1 en 2 dagen) */
+    .warnings-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .warning-banner {
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .warning-banner.day1 {
+      background: var(--warn-bg);
+      border: 2px solid var(--warn-border);
+      color: var(--warn-text);
+    }
+
+    .warning-banner.day2 {
+      background: var(--warn2-bg);
+      border: 2px solid var(--warn2-border);
+      color: var(--warn2-text);
+    }
+
+    .warning-banner strong {
+      display: block;
+      font-size: 19px;
+      margin-bottom: 4px;
+    }
+
+    /* Kalender kaart */
+    .calendar-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .month-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .month-title {
+      font-size: 25px;
+      font-weight: 700;
+      text-transform: capitalize;
+      color: var(--heading);
+    }
+
+    .nav-btn {
+      background: var(--card-elevated);
+      border: none;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--subtext);
+      margin-bottom: 10px;
+    }
+
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .day-cell {
+      min-height: 54px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .day-cell.empty {
+      cursor: default;
+    }
+
+    .day-number {
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 21px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .day-cell.today .day-number {
+      color: var(--accent);
+      font-weight: 700;
+      background: var(--accent-soft);
+    }
+
+    .day-cell.selected .day-number {
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .dots {
+      display: flex;
+      gap: 4px;
+      height: 8px;
+      margin-top: 2px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    /* Dag Afspraken Sectie */
+    .agenda-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .selected-date-label {
+      font-size: 22px;
+      font-weight: 700;
+      text-transform: capitalize;
+      color: var(--heading);
+    }
+
+    .add-btn {
+      background: var(--accent);
+      color: #ffffff;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 24px;
+      font-size: 19px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .event-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .event-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid var(--border);
+      border-left: 6px solid var(--accent);
+    }
+
+    .event-info h3 {
+      margin: 0 0 6px 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--heading);
+    }
+
+    .event-info p {
+      margin: 0;
+      font-size: 18px;
+      color: var(--subtext);
+    }
+
+    .tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .badge {
+      font-size: 15px;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+
+    .warn-badge {
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      border: 1.5px solid var(--warn-border);
+      font-size: 15px;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+
+    .warn2-badge {
+      background: var(--warn2-bg);
+      color: var(--warn2-text);
+      border: 1.5px solid var(--warn2-border);
+      font-size: 15px;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+
+    .event-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      background: var(--card-elevated);
+      color: var(--text);
+      border: none;
+      border-radius: 10px;
+      padding: 11px 15px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--subtext);
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 32px 18px;
+      border-radius: 16px;
+      font-size: 19px;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: var(--modal-backdrop);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      width: 100%;
+      max-width: 560px;
+      border-radius: 22px 22px 0 0;
+      padding: 24px 20px calc(var(--safe-bottom) + 24px);
+      animation: slideUp 0.22s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal h2 {
+      margin: 0 0 18px 0;
+      font-size: 24px;
+      color: var(--heading);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--subtext);
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-size: 20px;
+      outline: none;
+      background: var(--card-elevated);
+      color: var(--heading);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .btn-cancel {
+      flex: 1;
+      padding: 15px;
+      border-radius: 14px;
+      border: none;
+      background: var(--card-elevated);
+      color: var(--text);
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-save {
+      flex: 1;
+      padding: 15px;
+      border-radius: 14px;
+      border: none;
+      background: var(--accent);
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>DagKalender</h1>
+    <div class="header-controls">
+      <button class="theme-btn" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Wissel thema">☀️ Licht</button>
+      <button class="today-btn" onclick="goToday()">Vandaag</button>
+    </div>
+  </header>
+
+  <input type="text" id="searchInput" class="search-box" placeholder="Zoek afspraak..." oninput="renderAll()" />
+
+  <div id="warningsStack" class="warnings-stack"></div>
+
+  <div class="calendar-card">
+    <div class="month-nav">
+      <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+      <div class="month-title" id="monthTitle"></div>
+      <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
+    </div>
+    <div class="weekdays">
+      <div>Ma</div><div>Di</div><div>Wo</div><div>Do</div><div>Vr</div><div>Za</div><div>Zo</div>
+    </div>
+    <div class="days-grid" id="daysGrid"></div>
+  </div>
+
+  <div class="agenda-header">
+    <div class="selected-date-label" id="selectedDateLabel"></div>
+    <button class="add-btn" onclick="openModal()">+ Afspraak</button>
+  </div>
+
+  <div class="event-list" id="eventList"></div>
+</div>
+
+<!-- Modal voor toevoegen / bewerken -->
+<div class="modal-backdrop" id="modalBackdrop" onclick="closeModalOnBackdrop(event)">
+  <div class="modal">
+    <h2 id="modalTitle">Nieuwe dagafspraak</h2>
+    <input type="hidden" id="editId" />
+    <div class="form-group">
+      <label>Titel (hele dag)</label>
+      <input type="text" id="eventTitle" placeholder="Bijv. Tandarts, Verjaardag, Vrije dag" />
+    </div>
+    <div class="form-group">
+      <label>Categorie</label>
+      <select id="eventCategory">
+        <option value="Werk">Werk</option>
+        <option value="Privé">Privé</option>
+        <option value="Belangrijk">Belangrijk</option>
+        <option value="Gezondheid">Gezondheid</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Notitie (optioneel)</label>
+      <textarea id="eventNote" rows="3" placeholder="Extra opmerkingen..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuleer</button>
+      <button class="btn-save" onclick="saveEvent()">Bewaar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'iphone_dagkalender_afspraken_v1';
+  const THEME_KEY = 'iphone_dagkalender_thema_v1';
+  let events = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+  let viewDate = new Date();
+  let selectedDate = new Date();
+
+  const categoryColors = {
+    'Werk': '#0a84ff',
+    'Privé': '#30d158',
+    'Belangrijk': '#ff453a',
+    'Gezondheid': '#bf5af2'
+  };
+
+  function applyTheme(theme) {
+    const isLight = theme === 'light';
+    document.body.classList.toggle('light-mode', isLight);
+    const btn = document.getElementById('themeToggleBtn');
+    const meta = document.getElementById('themeColorMeta');
+    if (isLight) {
+      btn.textContent = '🌙 Donker';
+      meta.setAttribute('content', '#f2f2f7');
+    } else {
+      btn.textContent = '☀️ Licht';
+      meta.setAttribute('content', '#000000');
+    }
+  }
+
+  function toggleTheme() {
+    const isCurrentlyLight = document.body.classList.contains('light-mode');
+    const nextTheme = isCurrentlyLight ? 'dark' : 'light';
+    localStorage.setItem(THEME_KEY, nextTheme);
+    applyTheme(nextTheme);
+  }
+
+  function formatKey(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function getOffsetDateKey(daysAhead) {
+    const now = new Date();
+    const target = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysAhead);
+    return formatKey(target);
+  }
+
+  function purgePastEvents() {
+    const todayKey = formatKey(new Date());
+    const filtered = events.filter(ev => ev.date >= todayKey);
+    if (filtered.length !== events.length) {
+      events = filtered;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    }
+  }
+
+  function renderUpcomingWarnings() {
+    const stack = document.getElementById('warningsStack');
+    stack.innerHTML = '';
+
+    const day1Key = getOffsetDateKey(1);
+    const day2Key = getOffsetDateKey(2);
+
+    const day1Events = events.filter(ev => ev.date === day1Key);
+    const day2Events = events.filter(ev => ev.date === day2Key);
+
+    if (day1Events.length > 0) {
+      const titles1 = day1Events.map(ev => escapeHtml(ev.title)).join(', ');
+      const banner1 = document.createElement('div');
+      banner1.className = 'warning-banner day1';
+      banner1.innerHTML = `
+        <strong>Let op: over 1 dag (morgen)</strong>
+        <span>${titles1}</span>
+      `;
+      stack.appendChild(banner1);
+    }
+
+    if (day2Events.length > 0) {
+      const titles2 = day2Events.map(ev => escapeHtml(ev.title)).join(', ');
+      const banner2 = document.createElement('div');
+      banner2.className = 'warning-banner day2';
+      banner2.innerHTML = `
+        <strong>Herinnering: over 2 dagen (overmorgen)</strong>
+        <span>${titles2}</span>
+      `;
+      stack.appendChild(banner2);
+    }
+  }
+
+  function isSameDay(d1, d2) {
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+  }
+
+  function changeMonth(delta) {
+    viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + delta, 1);
+    renderAll();
+  }
+
+  function goToday() {
+    const now = new Date();
+    viewDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    selectedDate = now;
+    renderAll();
+  }
+
+  function renderCalendar() {
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    const monthName = viewDate.toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' });
+    document.getElementById('monthTitle').textContent = monthName;
+
+    const firstDay = new Date(year, month, 1);
+    const startOffset = (firstDay.getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    const query = document.getElementById('searchInput').value.trim().toLowerCase();
+
+    const grid = document.getElementById('daysGrid');
+    grid.innerHTML = '';
+
+    for (let i = 0; i < startOffset; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'day-cell empty';
+      grid.appendChild(empty);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cellDate = new Date(year, month, d);
+      const key = formatKey(cellDate);
+      const dayEvents = events.filter(e =>
+        e.date === key &&
+        (!query || e.title.toLowerCase().includes(query) || (e.note && e.note.toLowerCase().includes(query)))
+      );
+
+      const cell = document.createElement('div');
+      cell.className = 'day-cell';
+      if (isSameDay(cellDate, today)) cell.classList.add('today');
+      if (isSameDay(cellDate, selectedDate)) cell.classList.add('selected');
+
+      const num = document.createElement('div');
+      num.className = 'day-number';
+      num.textContent = d;
+      cell.appendChild(num);
+
+      const dots = document.createElement('div');
+      dots.className = 'dots';
+      dayEvents.slice(0, 3).forEach(ev => {
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        dot.style.backgroundColor = categoryColors[ev.category] || '#0a84ff';
+        dots.appendChild(dot);
+      });
+      cell.appendChild(dots);
+
+      cell.onclick = () => {
+        selectedDate = cellDate;
+        renderAll();
+      };
+
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderAgenda() {
+    const label = selectedDate.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
+    document.getElementById('selectedDateLabel').textContent = label;
+
+    const key = formatKey(selectedDate);
+    const day1Key = getOffsetDateKey(1);
+    const day2Key = getOffsetDateKey(2);
+
+    const query = document.getElementById('searchInput').value.trim().toLowerCase();
+    const dayEvents = events.filter(e =>
+      e.date === key &&
+      (!query || e.title.toLowerCase().includes(query) || (e.note && e.note.toLowerCase().includes(query)))
+    );
+
+    const list = document.getElementById('eventList');
+    list.innerHTML = '';
+
+    if (dayEvents.length === 0) {
+      list.innerHTML = `<div class="empty-state">Geen afspraken op deze dag.<br>Tik op <strong>+ Afspraak</strong> om er een toe te voegen.</div>`;
+      return;
+    }
+
+    dayEvents.forEach(ev => {
+      const color = categoryColors[ev.category] || '#0a84ff';
+      let dayBadge = '';
+      if (key === day1Key) {
+        dayBadge = `<span class="warn-badge">Over 1 dag (morgen)</span>`;
+      } else if (key === day2Key) {
+        dayBadge = `<span class="warn2-badge">Over 2 dagen (overmorgen)</span>`;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'event-card';
+      card.style.borderLeftColor = color;
+      card.innerHTML = `
+        <div class="event-info">
+          <h3>${escapeHtml(ev.title)}</h3>
+          ${ev.note ? `<p>${escapeHtml(ev.note)}</p>` : ''}
+          <div class="tags-row">
+            <span class="badge" style="background:${color}33; color:${color};">${ev.category}</span>
+            ${dayBadge}
+          </div>
+        </div>
+        <div class="event-actions">
+          <button class="icon-btn" onclick="editEvent('${ev.id}')">Bewerk</button>
+          <button class="icon-btn" style="color:var(--danger);" onclick="deleteEvent('${ev.id}')">Wis</button>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+  }
+
+  function openModal(eventToEdit = null) {
+    document.getElementById('modalBackdrop').classList.add('open');
+    if (eventToEdit) {
+      document.getElementById('modalTitle').textContent = 'Afspraak bewerken';
+      document.getElementById('editId').value = eventToEdit.id;
+      document.getElementById('eventTitle').value = eventToEdit.title;
+      document.getElementById('eventCategory').value = eventToEdit.category;
+      document.getElementById('eventNote').value = eventToEdit.note || '';
+    } else {
+      document.getElementById('modalTitle').textContent = 'Nieuwe dagafspraak';
+      document.getElementById('editId').value = '';
+      document.getElementById('eventTitle').value = '';
+      document.getElementById('eventCategory').value = 'Privé';
+      document.getElementById('eventNote').value = '';
+    }
+    setTimeout(() => document.getElementById('eventTitle').focus(), 100);
+  }
+
+  function closeModal() {
+    document.getElementById('modalBackdrop').classList.remove('open');
+  }
+
+  function closeModalOnBackdrop(e) {
+    if (e.target.id === 'modalBackdrop') closeModal();
+  }
+
+  function saveEvent() {
+    const title = document.getElementById('eventTitle').value.trim();
+    if (!title) return;
+
+    const id = document.getElementById('editId').value;
+    const category = document.getElementById('eventCategory').value;
+    const note = document.getElementById('eventNote').value.trim();
+
+    if (id) {
+      const idx = events.findIndex(e => e.id === id);
+      if (idx > -1) {
+        events[idx] = { ...events[idx], title, category, note };
+      }
+    } else {
+      events.push({
+        id: Date.now().toString(),
+        date: formatKey(selectedDate),
+        title,
+        category,
+        note
+      });
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    purgePastEvents();
+    closeModal();
+    renderAll();
+  }
+
+  function editEvent(id) {
+    const ev = events.find(e => e.id === id);
+    if (ev) openModal(ev);
+  }
+
+  function deleteEvent(id) {
+    events = events.filter(e => e.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    renderAll();
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+  }
+
+  function renderAll() {
+    purgePastEvents();
+    renderUpcomingWarnings();
+    renderCalendar();
+    renderAgenda();
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      renderAll();
+    }
+  });
+
+  applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+  renderAll();
+</script>
+</body>
+</html>
